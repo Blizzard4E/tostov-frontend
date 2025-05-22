@@ -1,5 +1,7 @@
 <template>
-	<div></div>
+	<div>
+		<Button variant="outline">Hello</Button>
+	</div>
 </template>
 
 <script lang="ts" setup>
