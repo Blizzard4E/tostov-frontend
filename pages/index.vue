@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="grid gap-4">
 		<CategoryList />
 		<LocationList v-if="locations" :locations="locations" />
 	</div>
@@ -29,7 +29,7 @@ const {
             )
         `
 		)
-		.order("created_at", { ascending: false });
+		.order("created_at", { ascending: true });
 
 	if (error) {
 		console.error("Error fetching locations:", error);

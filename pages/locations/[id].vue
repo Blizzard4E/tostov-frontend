@@ -8,24 +8,26 @@
 						{{ location.name_en }}
 					</h1>
 					<div class="flex items-center gap-2 mb-3">
-						<span
+						<NuxtLink
+							:href="`/categories/${location.category.id}`"
 							class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
 						>
 							{{ location.category.name_en }}
-						</span>
+						</NuxtLink>
 					</div>
 				</div>
 			</div>
 
 			<!-- Tags -->
 			<div class="flex flex-wrap gap-2 mb-6">
-				<span
+				<NuxtLink
 					v-for="tag in location.tags"
 					:key="tag.id"
-					class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+					:href="`/search?tag=${tag.name}`"
+					class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 hover:bg-primary hover:text-primary-foreground transition-colors"
 				>
 					#{{ tag.name }}
-				</span>
+				</NuxtLink>
 			</div>
 		</div>
 
@@ -360,7 +362,7 @@ const {
 			`
             *,
             vendor:vendor_id(id, username, email, created_at),
-            category:category_id(name_en),
+            category:category_id(name_en, name_km, id),
             location_tags(
                 tags(id, name)
             )
