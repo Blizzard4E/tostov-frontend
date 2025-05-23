@@ -29,9 +29,17 @@
 			</div>
 		</div>
 
-		<!-- Image Gallery -->
+		<!-- Image Gallery - Responsive -->
 		<div class="mb-8">
-			<ImageGrid :images="location.media.images" />
+			<!-- Desktop/Tablet: Use ImageGrid -->
+			<div class="hidden md:block">
+				<ImageGrid :images="location.media.images" />
+			</div>
+
+			<!-- Mobile: Use Carousel -->
+			<div class="block md:hidden">
+				<Carousel :images="location.media.images" />
+			</div>
 		</div>
 
 		<!-- Main Content Grid -->

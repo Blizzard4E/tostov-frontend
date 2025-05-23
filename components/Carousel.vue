@@ -1,9 +1,7 @@
 <!-- ImageCarousel.vue Component -->
 <template>
-	<div class="relative w-[300px] aspect-square bg-gray-100 rounded-lg">
-		<div
-			class="relative w-[300px] aspect-square overflow-hidden rounded-lg"
-		>
+	<div class="relative w-full aspect-square bg-gray-100 rounded-lg">
+		<div class="relative w-full aspect-square overflow-hidden rounded-lg">
 			<!-- Main carousel container -->
 			<div
 				ref="carouselContainer"
