@@ -1,9 +1,9 @@
 <template>
 	<div>
-		<div class="max-w-[1200px] w-full m-auto grid gap-4">
+		<div class="max-w-[1200px] w-full m-auto grid gap-4 p-4">
 			<IconLogo />
 			<Input :placeholder="'Where to?'" :is-search="true" />
-			<CategoryList />
+
 			<slot />
 		</div>
 	</div>

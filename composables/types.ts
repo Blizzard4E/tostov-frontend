@@ -45,9 +45,10 @@ export type Location = {
 	address: string;
 	map_link: string;
 	website: string;
-	vender_id: number;
-	category_id: number;
+	vendor: Vendor;
 	category: Category;
 	tags: Tag[];
-	media: string[];
+	media: {
+		images: string[];
+	};
 };

@@ -1,11 +1,17 @@
 <template>
 	<div>
-		<LocationItem v-for="location in locations" :location="location" />
+		<CategoryList />
+		<LocationList v-if="locations" :locations="locations" />
 	</div>
 </template>
 
 <script lang="ts" setup>
+import type { Location } from "#imports";
+
 const supabase = useSupabaseClient<Location[]>();
+const { user, clearUser } = useAuth();
+
+// Fetch locations with category information and tags
 const {
 	data: locations,
 	status: locationsStatus,
@@ -15,21 +21,32 @@ const {
 		.from("locations")
 		.select(
 			`
-            *, 
-            category:category_id(name_en, name_km),
+            *,
+            vendor:vendor_id(id, username, email, created_at),
+            category:category_id(name_en),
             location_tags(
                 tags(id, name)
             )
         `
 		)
 		.order("created_at", { ascending: false });
-	console.log("locations", data);
+
 	if (error) {
 		console.error("Error fetching locations:", error);
 		return [];
 	}
 
-	return data;
+	// Transform the data to flatten the tags structure
+	const transformedData =
+		data?.map((location) => ({
+			...location,
+			tags:
+				location.location_tags?.map((lt: { tags: any }) => lt.tags) ||
+				[],
+		})) || [];
+
+	console.log(transformedData);
+	return transformedData as Location[];
 });
 </script>
 
