@@ -385,63 +385,56 @@ const {
 });
 
 // Function to extract place ID from Google Maps link and create embed URL
+// Alternative solution without API key - uses Google Maps search directly
 const getEmbedMapUrl = (mapLink: string): string => {
 	try {
-		// For the specific example, we can hardcode the known embed URL
-		if (mapLink === "https://maps.app.goo.gl/a2nyjeTFUdJ6fPtd8") {
-			return "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3909.1306904257635!2d104.9151122!3d11.5424815!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310951247e6c3067%3A0x59cf8a37b9bc1279!2sC%C4%81%20Feve%20Coffee%20%26%20Eatery!5e0!3m2!1sen!2skh!4v1748012517862!5m2!1sen!2skh";
+		// For any Google Maps link, we'll create a search-based embed
+		// This method doesn't require an API key but has some limitations
+
+		const businessName = location.value?.name_en || "";
+		const address = location.value?.address || "";
+
+		// Create search query
+		let searchQuery = "";
+		if (businessName && address) {
+			searchQuery = `${businessName}, ${address}`;
+		} else if (businessName) {
+			searchQuery = businessName;
+		} else if (address) {
+			searchQuery = address;
 		}
 
-		// Handle maps.app.goo.gl links and other formats
-		if (mapLink.includes("maps.app.goo.gl") || mapLink.includes("goo.gl")) {
-			// Since we can't resolve shortened URLs directly, we'll use the business name + address for a more accurate search
-			const businessName = location.value?.name_en || "";
-			const address = location.value?.address || "";
-			const searchQuery = businessName
-				? `${businessName}, ${address}`
-				: address;
-
-			// Use Google's search-based embed with the business name for better accuracy
-			return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dpoDbMn2D1XPzI&q=${encodeURIComponent(
-				searchQuery
-			)}&zoom=16`;
+		if (searchQuery) {
+			// Use the basic Google Maps embed with search
+			const encodedQuery = encodeURIComponent(searchQuery);
+			return `https://maps.google.com/maps?q=${encodedQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 		}
 
-		// Handle direct Google Maps URLs with place IDs
-		const placeIdMatch = mapLink.match(/place_id:([a-zA-Z0-9_-]+)/);
-		if (placeIdMatch) {
-			placeId = placeIdMatch[1];
-			return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dpoDbMn2D1XPzI&place_id=${placeId}&zoom=16`;
-		}
-
-		// Handle @coordinates format
+		// If we have coordinates in the original link, try to extract them
 		const coordMatch = mapLink.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 		if (coordMatch) {
 			const lat = coordMatch[1];
 			const lng = coordMatch[2];
-			return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d500!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f17.1!3m3!1m2!1s0x0%3A0x0!2s!5e0!3m2!1sen!2skh!4v${Date.now()}`;
+			const searchQuery = businessName || address || `${lat},${lng}`;
+			const encodedQuery = encodeURIComponent(searchQuery);
+			return `https://maps.google.com/maps?q=${encodedQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 		}
 
-		// Fallback: use business name + address for better search results
-		const businessName = location.value?.name_en || "";
-		const address = location.value?.address || "";
-		const searchQuery = businessName
-			? `${businessName}, ${address}`
-			: address;
-		return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dpoDbMn2D1XPzI&q=${encodeURIComponent(
-			searchQuery
-		)}&zoom=16`;
+		// Final fallback
+		const fallbackQuery = encodeURIComponent(
+			businessName || address || "Phnom Penh, Cambodia"
+		);
+		return `https://maps.google.com/maps?q=${fallbackQuery}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
 	} catch (error) {
-		console.error("Error parsing map link:", error);
-		// Fallback to business name + address search
-		const businessName = location.value?.name_en || "";
-		const address = location.value?.address || "";
-		const searchQuery = businessName
-			? `${businessName}, ${address}`
-			: address;
-		return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dpoDbMn2D1XPzI&q=${encodeURIComponent(
-			searchQuery
-		)}&zoom=16`;
+		console.error("Error creating map embed:", error);
+
+		// Error fallback
+		const fallbackQuery = encodeURIComponent(
+			location.value?.name_en ||
+				location.value?.address ||
+				"Phnom Penh, Cambodia"
+		);
+		return `https://maps.google.com/maps?q=${fallbackQuery}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
 	}
 };
 </script>
