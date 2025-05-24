@@ -1,10 +1,10 @@
 <template>
-	<ul class="flex">
+	<ul class="flex w-full overflow-x-auto">
 		<NuxtLink
 			v-for="(category, i) in categories"
 			:href="`/categories/${category.id}`"
 			:key="'category-' + i + '-' + category.id"
-			class="flex flex-col items-center gap-2 p-2 transition-all group border-b-3 w-30"
+			class="flex flex-shrink-0 flex-col items-center gap-2 p-2 transition-all group border-b-3 w-24"
 			:class="
 				route.params.id == category.id
 					? 'border-primary'
@@ -14,7 +14,7 @@
 			<Icon
 				:name="getCategoryIcon(category.name_en)"
 				class="transition-all"
-				size="32"
+				size="22"
 				:class="
 					route.params.id == category.id
 						? 'text-primary'
@@ -22,7 +22,7 @@
 				"
 			/>
 			<h2
-				class="font-bold transition-all"
+				class="font-bold transition-all text-sm"
 				:class="
 					route.params.id == category.id
 						? 'text-primary'
@@ -55,7 +55,7 @@ const {
 	const { data, error } = await supabase
 		.from("categories")
 		.select("id, name_en, name_km")
-		.order("created_at", { ascending: false });
+		.order("created_at", { ascending: true });
 
 	if (error) {
 		console.error("Error fetching categories:", error);

@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="max-w-[1200px] w-full m-auto grid gap-4 p-4">
-			<div class="flex justify-between">
+			<div class="grid grid-cols-2 md:grid-cols-3">
 				<IconLogo />
 				<NuxtLink
 					href="/search"

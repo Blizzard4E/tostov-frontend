@@ -1,5 +1,5 @@
 <template>
-	<div class="flex gap-4">
+	<div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
 		<LocationItem v-for="location in locations" :location="location" />
 	</div>
 </template>

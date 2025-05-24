@@ -1,5 +1,8 @@
 <template>
-	<NuxtLink :href="'/locations/' + location.id" class="grid w-[300px] gap-2">
+	<NuxtLink
+		:href="'/locations/' + location.id"
+		class="grid w-full gap-2 flex-shrink-0"
+	>
 		<div class="w-full aspect-square overflow-hidden rounded-2xl">
 			<img
 				:src="location.media.images[0]"
@@ -9,7 +12,7 @@
 		</div>
 		<!-- <Carousel :images="location.media.images" /> -->
 		<h1>{{ location.name_en }}</h1>
-		<h2 class="flex gap-2 max-w-[300px] overflow-hidden">
+		<h2 class="flex gap-2 max-w-full overflow-hidden">
 			<NuxtLink
 				href="/search"
 				class="text-sm text-muted hover:text-primary transition-all flex-shrink-0"
