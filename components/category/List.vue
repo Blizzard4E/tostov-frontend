@@ -14,7 +14,7 @@
 			<Icon
 				:name="getCategoryIcon(category.name_en)"
 				class="transition-all"
-				size="22"
+				size="24"
 				:class="
 					route.params.id == category.id
 						? 'text-primary'
@@ -36,12 +36,20 @@
 </template>
 
 <script lang="ts" setup>
+import { Dessert } from "lucide-vue-next";
+
 const route = useRoute();
 const supabase = useSupabaseClient<Category[]>();
 const { language } = useLanguage();
 function getCategoryIcon(category: string) {
 	const categoryIcons: Record<string, string> = {
 		Cafés: "mingcute:teacup-fill",
+		Bakery: "mingcute:bread-fill",
+		Restaurant: "mingcute:fork-spoon-fill",
+		Dessert: "mingcute:ice-cream-fill",
+		Bar: "mingcute:bottle-glass-fill",
+		Entertainment: "mingcute:happy-fill",
+		Snacks: "mingcute:sugar-coated-haws-fill",
 	};
 
 	return categoryIcons[category] || "mingcute:teacup-fill";

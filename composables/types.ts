@@ -51,4 +51,15 @@ export type Location = {
 	media: {
 		images: string[];
 	};
+	location_ratings: Rating[];
+};
+export type Rating = {
+	id: number;
+	rating: number;
+	context: string;
+	created_at: string;
+	user: User;
+	location: Location;
+	location_id?: number;
+	user_id?: number;
 };

@@ -4,9 +4,35 @@
 		<div class="mb-8">
 			<div class="flex items-start justify-between mb-4">
 				<div>
-					<h1 class="text-3xl font-bold text-gray-900 mb-2">
-						{{ location.name_en }}
-					</h1>
+					<div class="flex justify-between gap-4">
+						<h1 class="text-3xl font-bold text-gray-900 mb-2">
+							{{
+								language == "en"
+									? location.name_en
+									: location.name_km
+							}}
+						</h1>
+						<div class="flex items-center gap-1">
+							<Icon
+								name="mingcute:star-fill"
+								class="text-yellow-400"
+								size="24"
+							/>
+							<div class="mt-0.5 text-lg">
+								{{
+									location.location_ratings.length
+										? (
+												location.location_ratings.reduce(
+													(sum, r) => sum + r.rating,
+													0
+												) /
+												location.location_ratings.length
+										  ).toFixed(1)
+										: "0.0"
+								}}
+							</div>
+						</div>
+					</div>
 					<div class="flex items-center gap-2 mb-3">
 						<NuxtLink
 							:href="`/categories/${location.category.id}`"
@@ -120,6 +146,7 @@
 						</div>
 					</div>
 				</div>
+				<Rating :location-id="location.id" />
 			</div>
 
 			<!-- Contact & Info Section -->
@@ -340,8 +367,7 @@ import type { Location } from "#imports";
 
 const route = useRoute();
 const supabase = useSupabaseClient<Location>();
-const { user, clearUser } = useAuth();
-
+const { language } = useLanguage();
 // Get the location ID from the route params
 const locationId = route.params.id;
 
@@ -365,6 +391,12 @@ const {
             category:category_id(name_en, name_km, id),
             location_tags(
                 tags(id, name)
+            ),
+            location_ratings(
+                id,
+                rating,
+                user_id,
+                created_at
             )
         `
 		)
