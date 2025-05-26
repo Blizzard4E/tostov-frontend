@@ -28,6 +28,44 @@
 			>
 				{{ currentRating }}/5
 			</span>
+
+			<!-- Content textarea -->
+			<div class="w-full">
+				<label
+					for="rating-content"
+					class="block font-medium text-gray-700 mb-2"
+				>
+					{{ hasExistingRating ? "Your Review:" : "Leave review:" }}
+				</label>
+				<textarea
+					id="rating-content"
+					v-model="currentContent"
+					placeholder="Share your thoughts about this location..."
+					rows="3"
+					class="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+				></textarea>
+				<div class="text-sm text-gray-500 mt-2">
+					{{ currentContent.length }}/500 characters
+				</div>
+			</div>
+			<div class="flex justify-end w-full">
+				<button
+					v-if="
+						currentRating > 0 && (!hasExistingRating || hasChanges)
+					"
+					@click="submitRating"
+					:disabled="isSaving"
+					class="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+				>
+					{{
+						isSaving
+							? "Submitting..."
+							: hasExistingRating
+							? "Update Rating"
+							: "Submit Rating"
+					}}
+				</button>
+			</div>
 		</div>
 	</div>
 </template>
@@ -46,33 +84,58 @@ const supabase = useSupabaseClient<Rating>();
 const { user } = useAuth();
 
 const currentRating = ref(0);
+const currentContent = ref("");
 const hasExistingRating = ref(false);
+const isSaving = ref(false);
+const originalRating = ref(0);
+const originalContent = ref("");
 
 // Load existing user rating for this location
 onMounted(async () => {
 	if (user.value) {
 		const { data } = await supabase
 			.from("location_ratings")
-			.select("rating")
+			.select("rating, content")
 			.eq("location_id", props.locationId)
 			.eq("user_id", user.value.id)
 			.single();
 
 		if (data) {
 			currentRating.value = data.rating;
+			currentContent.value = data.content || "";
+			originalRating.value = data.rating;
+			originalContent.value = data.content || "";
 			hasExistingRating.value = true;
 		}
 	}
 });
 
-const handleRating = async (rating: number) => {
+// Computed property to check if there are changes
+const hasChanges = computed(() => {
+	return (
+		currentRating.value !== originalRating.value ||
+		currentContent.value !== originalContent.value
+	);
+});
+
+const handleRating = (rating: number) => {
 	if (!user.value) {
-		// You might want to show a login prompt here
 		navigateTo("/login");
 		return;
 	}
 
 	currentRating.value = rating;
+};
+
+const submitRating = async () => {
+	if (!user.value || isSaving.value || currentRating.value === 0) return;
+
+	// Limit content length
+	if (currentContent.value.length > 500) {
+		currentContent.value = currentContent.value.substring(0, 500);
+	}
+
+	isSaving.value = true;
 
 	try {
 		// Check if user already rated this location
@@ -88,24 +151,34 @@ const handleRating = async (rating: number) => {
 			await supabase
 				.from("location_ratings")
 				.update({
-					rating: rating,
+					rating: currentRating.value,
+					content: currentContent.value.trim() || null,
+					updated_at: new Date().toISOString(),
 				})
 				.eq("id", existingRating.id);
 		} else {
 			// Create new rating
 			await supabase.from("location_ratings").insert({
-				rating: rating,
+				rating: currentRating.value,
+				content: currentContent.value.trim() || null,
 				location_id: props.locationId,
 				user_id: user.value.id,
 			});
 
-			// Update the flag since we now have a rating
 			hasExistingRating.value = true;
 		}
+
+		// Update original values after successful save
+		originalRating.value = currentRating.value;
+		originalContent.value = currentContent.value;
+
+		// Optionally show success message or emit event
+		console.log("Rating submitted successfully!");
 	} catch (error) {
 		console.error("Error saving rating:", error);
-		// Reset rating on error
-		currentRating.value = 0;
+		// Optionally show error message to user
+	} finally {
+		isSaving.value = false;
 	}
 };
 </script>

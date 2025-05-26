@@ -147,6 +147,11 @@
 					</div>
 				</div>
 				<Rating :location-id="location.id" />
+				<LocationImageUpload
+					:location-id="location.id"
+					:current-images="location.media?.images || []"
+					@images-added="handleImagesAdded"
+				/>
 			</div>
 
 			<!-- Contact & Info Section -->
@@ -306,6 +311,8 @@
 						</div>
 					</div>
 				</div>
+
+				<Reviews :location-id="location.id" />
 			</div>
 		</div>
 
@@ -470,6 +477,10 @@ const getEmbedMapUrl = (mapLink: string): string => {
 		);
 		return `https://maps.google.com/maps?q=${fallbackQuery}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
 	}
+};
+const handleImagesAdded = async (newImages: string[]) => {
+	// Refresh the location data to show the new images
+	await locationRefresh();
 };
 </script>
 
