@@ -31,28 +31,110 @@
 					</button>
 				</div>
 
+				<!-- Selected Location Filter -->
+				<div
+					v-if="selectedLocation"
+					class="flex items-center gap-2 px-2 py-1 text-white bg-primary rounded-full text-sm"
+				>
+					<Icon name="mingcute:location-fill" size="12" />
+					<div>
+						{{
+							selectedLocation.name_en || selectedLocation.name_km
+						}}
+					</div>
+					<button
+						@click="clearSelectedLocation"
+						class="rounded-full transition-colors"
+						title="Remove location filter"
+					>
+						<Icon
+							name="mingcute:close-fill"
+							class="text-white"
+							size="12"
+						/>
+					</button>
+				</div>
+
 				<!-- Search Input -->
 				<input
 					v-model="searchInput"
 					@input="onSearchInput"
 					@keydown="onKeyDown"
-					placeholder="Type #tagname to search and select tags... "
+					placeholder="Search locations by name or type #tagname for tags..."
 					class="flex-1 outline-none min-w-[200px]"
 				/>
 			</div>
 
-			<!-- Tag Suggestions Dropdown -->
+			<!-- Suggestions Dropdown -->
 			<div
-				v-if="showSuggestions && tagSuggestions.length > 0"
+				v-if="
+					showSuggestions &&
+					(tagSuggestions.length > 0 ||
+						locationSuggestions.length > 0)
+				"
 				class="absolute top-full left-0 right-0 bg-white border border-t-0 rounded-b-lg shadow-lg z-50 max-h-48 overflow-y-auto"
 			>
+				<!-- Location Suggestions -->
+				<div
+					v-for="(suggestion, index) in locationSuggestions"
+					:key="`location-${suggestion.id}`"
+					@click="selectLocation(suggestion)"
+					:class="[
+						'px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2',
+						{
+							'bg-blue-50':
+								index === selectedSuggestionIndex &&
+								suggestionType === 'location',
+						},
+					]"
+				>
+					<Icon
+						name="mingcute:location-fill"
+						class="text-primary"
+						size="16"
+					/>
+					<div>
+						<div class="font-medium">
+							{{ suggestion.name_en }}
+							<span
+								v-if="
+									suggestion.name_km &&
+									suggestion.name_km !== suggestion.name_en
+								"
+								class="text-gray-600 ml-1"
+							>
+								({{ suggestion.name_km }})
+							</span>
+						</div>
+						<div class="text-xs text-gray-500">
+							{{ suggestion.address }}
+						</div>
+					</div>
+				</div>
+
+				<!-- Divider if both types exist -->
+				<div
+					v-if="
+						locationSuggestions.length > 0 &&
+						tagSuggestions.length > 0
+					"
+					class="border-t border-gray-200"
+				></div>
+
+				<!-- Tag Suggestions -->
 				<div
 					v-for="(suggestion, index) in tagSuggestions"
-					:key="suggestion.id"
+					:key="`tag-${suggestion.id}`"
 					@click="selectTag(suggestion)"
 					:class="[
 						'px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2',
-						{ 'bg-blue-50': index === selectedSuggestionIndex },
+						{
+							'bg-blue-50':
+								index ===
+									selectedSuggestionIndex -
+										locationSuggestions.length &&
+								suggestionType === 'tag',
+						},
 					]"
 				>
 					<span class="text-primary">#</span>
@@ -61,12 +143,23 @@
 			</div>
 		</div>
 
-		<!-- Results -->
-		<div v-if="selectedTags.length > 0" class="text-sm text-gray-600">
-			Searching for locations with tags:
-			<span v-for="(tag, index) in selectedTags" :key="tag.id">
-				<strong>#{{ tag.name }}</strong
-				><span v-if="index < selectedTags.length - 1">, </span>
+		<!-- Results Info -->
+		<div
+			v-if="selectedTags.length > 0 || selectedLocation"
+			class="text-sm text-gray-600"
+		>
+			<span v-if="selectedLocation">
+				Showing location:
+				<strong>{{
+					selectedLocation.name_en || selectedLocation.name_km
+				}}</strong>
+			</span>
+			<span v-else-if="selectedTags.length > 0">
+				Searching for locations with tags:
+				<span v-for="(tag, index) in selectedTags" :key="tag.id">
+					<strong>#{{ tag.name }}</strong
+					><span v-if="index < selectedTags.length - 1">, </span>
+				</span>
 			</span>
 		</div>
 
@@ -82,6 +175,13 @@ interface Tag {
 	name: string;
 }
 
+interface LocationSuggestion {
+	id: string;
+	name_en: string;
+	name_km: string;
+	address: string;
+}
+
 const supabase = useSupabaseClient();
 const { user, clearUser } = useAuth();
 const route = useRoute();
@@ -89,9 +189,12 @@ const route = useRoute();
 // Search and tag selection state
 const searchInput = ref("");
 const selectedTags = ref<Tag[]>([]);
+const selectedLocation = ref<LocationSuggestion | null>(null);
 const tagSuggestions = ref<Tag[]>([]);
+const locationSuggestions = ref<LocationSuggestion[]>([]);
 const showSuggestions = ref(false);
 const selectedSuggestionIndex = ref(-1);
+const suggestionType = ref<"location" | "tag">("location");
 const searchTimeout = ref<NodeJS.Timeout | null>(null);
 
 // Get selected tag IDs for database query
@@ -125,7 +228,6 @@ const loadTagFromQuery = async () => {
 const searchTags = async (query: string) => {
 	if (!query || query.length < 2) {
 		tagSuggestions.value = [];
-		showSuggestions.value = false;
 		return;
 	}
 
@@ -151,8 +253,29 @@ const searchTags = async (query: string) => {
 	}
 
 	tagSuggestions.value = data || [];
-	showSuggestions.value = true;
-	selectedSuggestionIndex.value = -1;
+};
+
+// Search for location suggestions
+const searchLocations = async (query: string) => {
+	if (!query || query.length < 2) {
+		locationSuggestions.value = [];
+		return;
+	}
+
+	const { data, error } = await supabase
+		.from("locations")
+		.select("id, name_en, name_km, address")
+		.or(
+			`name_en.ilike.%${query}%,name_km.ilike.%${query}%,address.ilike.%${query}%`
+		)
+		.limit(10);
+
+	if (error) {
+		console.error("Error searching locations:", error);
+		return;
+	}
+
+	locationSuggestions.value = data || [];
 };
 
 // Handle search input
@@ -164,43 +287,93 @@ const onSearchInput = () => {
 		clearTimeout(searchTimeout.value);
 	}
 
+	// Reset suggestions
+	tagSuggestions.value = [];
+	locationSuggestions.value = [];
+
+	if (!value || value.length < 2) {
+		showSuggestions.value = false;
+		return;
+	}
+
 	// Check if user typed # to trigger tag search
 	if (value.startsWith("#")) {
 		const query = value.slice(1); // Remove the # symbol
+		suggestionType.value = "tag";
 
 		// Debounce the search
-		searchTimeout.value = setTimeout(() => {
-			searchTags(query);
+		searchTimeout.value = setTimeout(async () => {
+			await searchTags(query);
+			showSuggestions.value = true;
+			selectedSuggestionIndex.value = -1;
 		}, 300);
 	} else {
-		showSuggestions.value = false;
-		tagSuggestions.value = [];
+		// Search locations by name
+		suggestionType.value = "location";
+
+		// Debounce the search
+		searchTimeout.value = setTimeout(async () => {
+			await searchLocations(value);
+			showSuggestions.value = true;
+			selectedSuggestionIndex.value = -1;
+		}, 300);
 	}
 };
 
 // Handle keyboard navigation
 const onKeyDown = (event: KeyboardEvent) => {
-	if (!showSuggestions.value || tagSuggestions.value.length === 0) return;
+	const totalSuggestions =
+		locationSuggestions.value.length + tagSuggestions.value.length;
+
+	if (!showSuggestions.value || totalSuggestions === 0) return;
 
 	switch (event.key) {
 		case "ArrowDown":
 			event.preventDefault();
 			selectedSuggestionIndex.value = Math.min(
 				selectedSuggestionIndex.value + 1,
-				tagSuggestions.value.length - 1
+				totalSuggestions - 1
 			);
+			// Update suggestion type based on index
+			if (
+				selectedSuggestionIndex.value < locationSuggestions.value.length
+			) {
+				suggestionType.value = "location";
+			} else {
+				suggestionType.value = "tag";
+			}
 			break;
 		case "ArrowUp":
 			event.preventDefault();
 			selectedSuggestionIndex.value = Math.max(
 				selectedSuggestionIndex.value - 1,
-				-1
+				0
 			);
+			// Update suggestion type based on index
+			if (
+				selectedSuggestionIndex.value < locationSuggestions.value.length
+			) {
+				suggestionType.value = "location";
+			} else {
+				suggestionType.value = "tag";
+			}
 			break;
 		case "Enter":
 			event.preventDefault();
 			if (selectedSuggestionIndex.value >= 0) {
-				selectTag(tagSuggestions.value[selectedSuggestionIndex.value]);
+				if (
+					selectedSuggestionIndex.value <
+					locationSuggestions.value.length
+				) {
+					selectLocation(
+						locationSuggestions.value[selectedSuggestionIndex.value]
+					);
+				} else {
+					const tagIndex =
+						selectedSuggestionIndex.value -
+						locationSuggestions.value.length;
+					selectTag(tagSuggestions.value[tagIndex]);
+				}
 			}
 			break;
 		case "Escape":
@@ -216,6 +389,17 @@ const selectTag = (tag: Tag) => {
 	searchInput.value = "";
 	showSuggestions.value = false;
 	tagSuggestions.value = [];
+	locationSuggestions.value = [];
+	selectedSuggestionIndex.value = -1;
+};
+
+// Select a location from suggestions
+const selectLocation = (location: LocationSuggestion) => {
+	selectedLocation.value = location;
+	searchInput.value = "";
+	showSuggestions.value = false;
+	tagSuggestions.value = [];
+	locationSuggestions.value = [];
 	selectedSuggestionIndex.value = -1;
 };
 
@@ -224,14 +408,60 @@ const removeTag = (tagId: string) => {
 	selectedTags.value = selectedTags.value.filter((tag) => tag.id !== tagId);
 };
 
-// Fetch locations filtered by selected tag IDs
+// Clear selected location
+const clearSelectedLocation = () => {
+	selectedLocation.value = null;
+};
+
+// Fetch locations filtered by selected tag IDs or specific location
 const {
 	data: locations,
 	status: locationsStatus,
 	refresh: locationsRefresh,
 } = useAsyncData(
-	`"locations"-${selectedTagIds.value.join(",")}`,
+	`locations-${selectedTagIds.value.join(",")}-${
+		selectedLocation.value?.id || ""
+	}`,
 	async () => {
+		// If a specific location is selected, show only that location
+		if (selectedLocation.value) {
+			const { data, error } = await supabase
+				.from("locations")
+				.select(
+					`
+					*,
+					vendor:vendor_id(id, username, email, created_at),
+					category:category_id(name_en),
+					location_tags(
+						tags(id, name)
+					),
+					location_ratings(
+						id,
+						rating,
+						user_id,
+						created_at
+					)
+				`
+				)
+				.eq("id", selectedLocation.value.id);
+
+			if (error) {
+				console.error("Error fetching selected location:", error);
+				return [];
+			}
+
+			return (
+				data?.map((location) => ({
+					...location,
+					tags:
+						location.location_tags?.map(
+							(lt: { tags: any }) => lt.tags
+						) || [],
+				})) || []
+			);
+		}
+
+		// Original tag-based filtering logic
 		if (selectedTagIds.value.length === 0) {
 			// Return all locations if no tags selected
 			const { data, error } = await supabase
@@ -345,8 +575,8 @@ const {
 		return transformedData as Location[];
 	},
 	{
-		// Re-fetch when selected tags change
-		watch: [selectedTagIds],
+		// Re-fetch when selected tags or location change
+		watch: [selectedTagIds, () => selectedLocation.value?.id],
 	}
 );
 
