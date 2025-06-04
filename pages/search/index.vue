@@ -243,6 +243,12 @@ const {
                 category:category_id(name_en),
                 location_tags(
                     tags(id, name)
+                ),
+                location_ratings(
+                    id,
+                    rating,
+                    user_id,
+                    created_at
                 )
             `
 				)
@@ -304,6 +310,12 @@ const {
             category:category_id(name_en),
             location_tags(
                 tags(id, name)
+            ),
+            location_ratings(
+                id,
+                rating,
+                user_id,
+                created_at
             )
         `
 			)

@@ -13,7 +13,7 @@
 				@click="openLightbox(0)"
 			>
 				<img
-					:src="visibleImages[0]"
+					:src="convertToHttps(visibleImages[0])"
 					:alt="`Image 1`"
 					class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 				/>
@@ -29,13 +29,13 @@
 				@click="openLightbox(1)"
 			>
 				<img
-					:src="visibleImages[1]"
+					:src="convertToHttps(visibleImages[1])"
 					:alt="`Image 2`"
 					class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 				/>
-				<div
+				<!-- <div
 					class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"
-				/>
+				/> -->
 			</div>
 
 			<!-- Image 3 - Top right (spans 2 cols, 1 row) -->
@@ -45,7 +45,7 @@
 				@click="openLightbox(2)"
 			>
 				<img
-					:src="visibleImages[2]"
+					:src="convertToHttps(visibleImages[2])"
 					:alt="`Image 3`"
 					class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 				/>
@@ -61,7 +61,7 @@
 				@click="openLightbox(3)"
 			>
 				<img
-					:src="visibleImages[3]"
+					:src="convertToHttps(visibleImages[3])"
 					:alt="`Image 4`"
 					class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 				/>
@@ -77,7 +77,7 @@
 				@click="openLightbox(4)"
 			>
 				<img
-					:src="visibleImages[4]"
+					:src="convertToHttps(visibleImages[4])"
 					:alt="`Image 5`"
 					class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 				/>
@@ -95,7 +95,7 @@
 				<!-- Background image (blurred version of the 5th image) -->
 				<img
 					v-if="images.length > 4"
-					:src="images[4]"
+					:src="convertToHttps(images[4])"
 					:alt="'Show more'"
 					class="absolute inset-0 w-full h-full object-cover opacity-30"
 				/>
@@ -134,7 +134,7 @@
 					@click="openLightbox(index + 5)"
 				>
 					<img
-						:src="image"
+						:src="convertToHttps(image)"
 						:alt="`Image ${index + 6}`"
 						class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 					/>
@@ -151,7 +151,7 @@
 					@click="openLightbox(index + 7)"
 				>
 					<img
-						:src="image"
+						:src="convertToHttps(image)"
 						:alt="`Image ${index + 8}`"
 						class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 					/>
@@ -181,7 +181,7 @@
 		>
 			<div class="relative max-w-4xl max-h-full">
 				<img
-					:src="images[lightboxIndex]"
+					:src="convertToHttps(images[lightboxIndex])"
 					:alt="`Image ${lightboxIndex + 1}`"
 					class="max-w-full max-h-full object-contain rounded-lg"
 					@click.stop
@@ -269,6 +269,19 @@ const props = defineProps<Props>();
 const showAll = ref(false);
 const lightboxOpen = ref(false);
 const lightboxIndex = ref(0);
+
+// Function to convert HTTP URLs to HTTPS
+const convertToHttps = (url: string): string => {
+	if (!url) return url;
+
+	// If the URL starts with http:// (not https://), convert it to https://
+	if (url.startsWith("http://")) {
+		return url.replace("http://", "https://");
+	}
+
+	// Return the URL as-is if it's already https:// or doesn't start with http://
+	return url;
+};
 
 const gridLayoutClasses = computed(() => {
 	if (!showAll.value && props.images.length > 5) {
