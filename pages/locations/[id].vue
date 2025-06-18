@@ -38,7 +38,11 @@
 							:href="`/categories/${location.category.id}`"
 							class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
 						>
-							{{ location.category.name_en }}
+							{{
+								language == "en"
+									? location.category.name_en
+									: location.category.name_km
+							}}
 						</NuxtLink>
 					</div>
 				</div>
@@ -81,7 +85,11 @@
 					<div
 						class="prose prose-sm text-gray-700 whitespace-pre-line"
 					>
-						{{ location.description_en }}
+						{{
+							language == "en"
+								? location.description_en
+								: location.description_km
+						}}
 					</div>
 				</div>
 				<div
